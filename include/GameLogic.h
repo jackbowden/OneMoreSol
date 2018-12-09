@@ -18,7 +18,7 @@
 #include "Hunter.h"
 #include "Brute.h"
 #include "Bomber.h"
-#include "Biker.h"
+#include "Minitank.h"
 
 #include "Bullet.h"
 #include "ArcBullet.h"

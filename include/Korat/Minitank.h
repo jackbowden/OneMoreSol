@@ -9,13 +9,13 @@
 #include "rngs.h"
 
 
-class Biker: public KoratEmpire {
+class Minitank: public KoratEmpire {
 public:
 	sf::Sprite biker;
 	sf::IntRect spriteFrame;
 
-	Biker(int, TextureLoader*);
-	virtual ~Biker();
+	Minitank(int, TextureLoader*);
+	virtual ~Minitank();
 
 	int getLane();
 

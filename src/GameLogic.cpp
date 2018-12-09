@@ -82,7 +82,7 @@ void GameLogic::moveKorat(float timePassed, MajorTom* majorTom)
                     {
                         if (currentKorat[i][j] -> getSpeed() == 0)
                         {
-                            if(currentKorat[i][j] -> getName() == "Biker")
+                            if(currentKorat[i][j] -> getName() == "Minitank")
                             {
                             	majorTom -> setScore(majorTom -> getScore() + 60);
                             	killedKorat++;
@@ -289,7 +289,7 @@ void GameLogic::spawnKorat()
             newKorat = new Bomber(koratSpawnLane, loadedTextures);
             break;
         case 7:
-            newKorat = new Biker(koratSpawnLane, loadedTextures);
+            newKorat = new Minitank(koratSpawnLane, loadedTextures);
             break;
         default:
             newKorat = new Grunt(koratSpawnLane, loadedTextures);
@@ -1284,7 +1284,7 @@ void GameLogic::queryKoratFiring()
             for (int j = 0; j < currentKorat[i].size(); j++)
             {
 
-                if (currentKorat[i][j] -> getName() == "Jackal" or currentKorat[i][j] -> getName() == "Elite" or currentKorat[i][j] -> getName() == "Brute" or currentKorat[i][j] -> getName() == "Biker" or currentKorat[i][j] -> getName() == "Hunter")
+                if (currentKorat[i][j] -> getName() == "Jackal" or currentKorat[i][j] -> getName() == "Elite" or currentKorat[i][j] -> getName() == "Brute" or currentKorat[i][j] -> getName() == "Minitank" or currentKorat[i][j] -> getName() == "Hunter")
                 {
                     if (currentKorat[i][j] -> queryToFire() == true) //if the Korat is ready to Fire
                     {
@@ -1313,7 +1313,7 @@ void GameLogic::queryKoratFiring()
 							newBullet = new KoratBullet2(currentKorat[i][j] -> getLane(), currentKorat[i][j] -> getPositionX() - 30, loadedTextures);
 							int laneToGoIn = decideBulletLaneKorat(currentKorat[i][j] -> getLane());
                             currentKoratBullet[laneToGoIn - 1].emplace_back(newBullet);
-						} else if (currentKorat[i][j] -> getName() == "Biker")
+						} else if (currentKorat[i][j] -> getName() == "Minitank")
 						{
 							bikerBulletsFired += 1;
 							newBullet = new KoratBullet4(currentKorat[i][j] -> getLane(), currentKorat[i][j] -> getPositionX() - 25, loadedTextures);

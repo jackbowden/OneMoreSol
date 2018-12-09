@@ -1,8 +1,8 @@
 
-#include "Biker.h"
+#include "Minitank.h"
 #include <iostream>
 
-Biker::Biker(int startLane, TextureLoader* loadedTextures){
+Minitank::Minitank(int startLane, TextureLoader* loadedTextures){
 
     lane = 0;
 
@@ -19,24 +19,24 @@ Biker::Biker(int startLane, TextureLoader* loadedTextures){
 
 }
 
-Biker::~Biker() {
+Minitank::~Minitank() {
 	// TODO Auto-generated destructor stub
 
 }
 
-void Biker::wasShot(int damage)
+void Minitank::wasShot(int damage)
 {
     health = health - damage;
 }
 
-int Biker::getLane()
+int Minitank::getLane()
 {
     return lane;
 }
 
-std::string Biker::getName()
+std::string Minitank::getName()
 {
-    return "Biker";
+    return "Minitank";
 }
 
 /** \brief
@@ -45,7 +45,7 @@ std::string Biker::getName()
  * \return void
  *
  */
-void Biker::setLane(int givenLane)
+void Minitank::setLane(int givenLane)
 {
      switch(givenLane)
 	{
@@ -70,7 +70,7 @@ void Biker::setLane(int givenLane)
 	}
 }
 
-void Biker::moveCurrentKorat(float timePassed)
+void Minitank::moveCurrentKorat(float timePassed)
 {
         if(biker.getPosition().x > -100)
         {
@@ -84,17 +84,17 @@ void Biker::moveCurrentKorat(float timePassed)
         }
 }
 
-void Biker::drawCurrentKorat(sf::RenderWindow& window)
+void Minitank::drawCurrentKorat(sf::RenderWindow& window)
 {
     window.draw(biker);
 }
 
-sf::Sprite Biker::getKorat()
+sf::Sprite Minitank::getKorat()
 {
     return biker;
 }
 
-float Biker::getPositionX()
+float Minitank::getPositionX()
 {
     return biker.getPosition().x;
 }
@@ -104,7 +104,7 @@ float Biker::getPositionX()
  * \return bool
  *
  */
-bool Biker::checkDeath()
+bool Minitank::checkDeath()
 {
     if (health <= 0)
     {
@@ -138,27 +138,27 @@ bool Biker::checkDeath()
     }
 }
 
-bool Biker::checkSurvive()
+bool Minitank::checkSurvive()
 {
     return survive;
 }
 
-int Biker::getHealth()
+int Minitank::getHealth()
 {
     return health;
 }
 
-int Biker::getSpeed()
+int Minitank::getSpeed()
 {
     return speed;
 }
 
-double Biker::getFireRate()
+double Minitank::getFireRate()
 {
 	return fireRate;
 }
 
-void Biker::setFireRate(double givenFireRate)
+void Minitank::setFireRate(double givenFireRate)
 {
 	fireRate = givenFireRate;
 }
@@ -168,7 +168,7 @@ void Biker::setFireRate(double givenFireRate)
  * \return bool
  *
  */
-bool Biker::queryToFire()
+bool Minitank::queryToFire()
 {
 	bool readyToFire = false;
 	lastBulletFired = fireBulletClock.getElapsedTime().asSeconds();
