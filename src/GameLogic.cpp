@@ -869,7 +869,7 @@ int GameLogic::decideBulletLaneKorat(int givenLane)
     else if (givenLane == lane5)
         return 5;
     else
-        cout << "bullet shit is broken 2" << endl;
+        cout << "bullet shit is broken: 2 bullet 2 broken" << endl;
 }
 
 int GameLogic::decideBulletType(Gun* currentGun)
