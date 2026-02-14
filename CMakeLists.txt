@@ -9,11 +9,11 @@
 #
 #########################################
 
+# Minimum Cmake Version
+cmake_minimum_required(VERSION 3.16)
+
 # Project name
 project(csci437)
-
-# Minimum Cmake Version
-cmake_minimum_required(VERSION 2.6)
 
 #####################
 # Setup Environment #
@@ -84,9 +84,21 @@ file(GLOB EXECLIST src/main.cpp)
 #############
 # Find SFML #
 #############
-find_package(SFML COMPONENTS graphics window system audio network)
-include_directories(${SFML_INCLUDE_DIR})
-link_libraries(${SFML_LIBRARIES})
+find_package(SFML 2 COMPONENTS graphics window system audio network CONFIG QUIET)
+
+if(NOT SFML_FOUND)
+  find_package(SFML 2 REQUIRED COMPONENTS graphics window system audio network)
+endif()
+
+set(ONEMORESOL_SFML_LIBS)
+if(TARGET SFML::Graphics)
+  list(APPEND ONEMORESOL_SFML_LIBS SFML::Graphics SFML::Window SFML::System SFML::Audio SFML::Network)
+elseif(TARGET sfml-graphics)
+  list(APPEND ONEMORESOL_SFML_LIBS sfml-graphics sfml-window sfml-system sfml-audio sfml-network)
+else()
+  include_directories(${SFML_INCLUDE_DIR})
+  list(APPEND ONEMORESOL_SFML_LIBS ${SFML_LIBRARIES})
+endif()
 
 if(NOT SFML_FOUND)
   # SFML not found
@@ -97,7 +109,9 @@ endif()
 # C++ Options #
 ###############
 # Enable C++11
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # determine build type
 # 1) use build type if specified by the user.
@@ -139,6 +153,7 @@ if(NOT SRC STREQUAL "")
   get_filename_component(LIBNAME ${csci437_SOURCE_DIR} NAME)
   set(LIBNAME "${LIBNAME}_core")
   add_library(${LIBNAME} ${SRC})
+  target_link_libraries(${LIBNAME} PUBLIC ${ONEMORESOL_SFML_LIBS})
 endif()
 
 # executables (any CPP file in 'bin' dir)
@@ -149,6 +164,8 @@ foreach(EXEC ${EXECLIST})
   if(NOT SRC STREQUAL "")
     target_link_libraries(${EXECNAME} LINK_PUBLIC ${LIBNAME})
   endif()
+
+  target_link_libraries(${EXECNAME} LINK_PUBLIC ${ONEMORESOL_SFML_LIBS})
 
   message("-- Adding executable: ${EXECNAME}")
 endforeach(EXEC)

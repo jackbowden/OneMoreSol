@@ -2,6 +2,7 @@
 #define TEXTURELOADER_H
 
 #include <SFML/Graphics.hpp>
+#include <array>
 class TextureLoader
 {
 private:

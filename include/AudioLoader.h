@@ -2,6 +2,7 @@
 #define AUDIOLOADER_H
 
 #include <SFML/Audio.hpp>
+#include <array>
 class AudioLoader
 {
 private:
