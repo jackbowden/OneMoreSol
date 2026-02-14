@@ -4,6 +4,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <array>
 #include <iostream>
 #include <typeinfo>
 #include "Gun.h"
