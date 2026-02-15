@@ -220,6 +220,15 @@ void GameViewPlayer::initializePlayState()
     levelCnt.setFillColor(sf::Color(0,0,0,255));
     levelCnt.setPosition(1215,770);
 
+    //Credit count display (top-left)
+    creditCnt.setFont(gameFont);
+    creditCnt.setCharacterSize(28);
+    creditCnt.setString("Credits 0");
+    creditCnt.setFillColor(sf::Color(255,255,255,255));
+    creditCnt.setOutlineColor(sf::Color(0,0,0,220));
+    creditCnt.setOutlineThickness(2.f);
+    creditCnt.setPosition(20,20);
+
     //Major Tom Health Display
 	majorTomHealth.setFont(gameFont);
 	majorTomHealth.setCharacterSize(22);
@@ -410,9 +419,14 @@ void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
  * \return bool
  *
  */
-bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
+bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader)
 {
     currentLevel = logic -> getLevel() - 1;
+
+    if (coinReader)
+    {
+        updateCreditCount(coinReader->getCredits());
+    }
 
     sf::Clock fireRate1;
     sf::Clock fireRate2;
@@ -429,6 +443,12 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
 
     while(window.isOpen())
     {
+        if (coinReader)
+        {
+            coinReader->checkForCoin();
+            updateCreditCount(coinReader->getCredits());
+        }
+
         if(logic -> isTankBossDead())
         {
             bool exit;
@@ -1084,7 +1104,7 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
     
     // Arcade mode: countdown timer
     sf::Clock countdownClock;
-    const float countdownDuration = 10.0f;
+    const float countdownDuration = 30.0f;
     bool arcadeMode = (coinReader != nullptr);
     
     // Initial draw (only for non-arcade mode)
@@ -1099,24 +1119,17 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
         if (arcadeMode)
         {
             coinReader->checkForCoin();
+
+            bool hasContinueCredit = coinReader->getCredits() > 0;
             
             // Check if countdown expired
             float elapsed = countdownClock.getElapsedTime().asSeconds();
-            if (elapsed >= countdownDuration && coinReader->getCredits() == 0)
+            if (elapsed >= countdownDuration && !hasContinueCredit)
             {
                 // Time's up, no credits - return to attract mode
                 gameMusic.stop();
                 resetGame();
                 return true;  // Exit to insert coin screen
-            }
-            
-            // Check if coin was inserted
-            if (coinReader->getCredits() > 0)
-            {
-                coinReader->useCredit();
-                retry = true;
-                logic -> loseLevel(sky, majorTom);
-                return false;  // Continue playing
             }
         }
 
@@ -1183,6 +1196,17 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
                         }
                     }
                 }
+                else if (Event.key.code == sf::Keyboard::Return)
+                {
+                    if (coinReader->getCredits() > 0)
+                    {
+                        menuSelection.play();
+                        coinReader->useCredit();
+                        retry = true;
+                        logic -> loseLevel(sky, majorTom);
+                        return false;  // Continue playing
+                    }
+                }
             }
         }
         
@@ -1192,47 +1216,75 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
             // Clear and draw base loss screen
             window.clear(sf::Color::Black);
             window.draw(lossScreen);
+
+            bool hasContinueCredit = coinReader->getCredits() > 0;
             
             float elapsed = countdownClock.getElapsedTime().asSeconds();
-            int secondsLeft = static_cast<int>(countdownDuration - elapsed);
+            int secondsLeft = static_cast<int>(countdownDuration - elapsed + 0.999f);
             if (secondsLeft < 0) secondsLeft = 0;
             
             // Semi-transparent overlay
-            sf::RectangleShape overlay(sf::Vector2f(600, 200));
-            overlay.setPosition(420, 490);
+            sf::RectangleShape overlay(sf::Vector2f(640, 300));
+            overlay.setPosition(400, 450);
             overlay.setFillColor(sf::Color(0, 0, 0, 200));
             overlay.setOutlineColor(sf::Color(255, 80, 80));
             overlay.setOutlineThickness(3);
             window.draw(overlay);
-            
-            // Countdown text
-            sf::Text countdownText;
-            countdownText.setFont(gameFont);
-            countdownText.setCharacterSize(80);
-            countdownText.setFillColor(sf::Color(255, 230, 120));
-            countdownText.setString(std::to_string(secondsLeft));
-            sf::FloatRect bounds = countdownText.getLocalBounds();
-            countdownText.setPosition(720 - bounds.width / 2.0f, 510);
-            window.draw(countdownText);
+
+            sf::FloatRect bounds;
+
+            sf::Text titleText;
+            titleText.setFont(gameFont);
+            titleText.setCharacterSize(52);
+            titleText.setFillColor(sf::Color(255, 120, 120));
+            titleText.setString("YOU DIED");
+            bounds = titleText.getLocalBounds();
+            titleText.setPosition(720 - bounds.width / 2.0f, 476);
+            window.draw(titleText);
+
+            sf::Text statusText;
+            statusText.setFont(gameFont);
+            statusText.setCharacterSize(34);
+            statusText.setFillColor(sf::Color::White);
+            statusText.setString(hasContinueCredit ? "CONTINUE AVAILABLE" : "INSERT CREDIT TO CONTINUE");
+            bounds = statusText.getLocalBounds();
+            statusText.setPosition(720 - bounds.width / 2.0f, 540);
+            window.draw(statusText);
+
+            float infoStartY = 640.0f;
+
+            if (!hasContinueCredit)
+            {
+                // Countdown text only when no credits are available
+                sf::Text countdownText;
+                countdownText.setFont(gameFont);
+                countdownText.setCharacterSize(56);
+                countdownText.setFillColor(sf::Color(255, 230, 120));
+                countdownText.setString(std::to_string(secondsLeft));
+                bounds = countdownText.getLocalBounds();
+                countdownText.setPosition(720 - bounds.width / 2.0f, 590);
+                window.draw(countdownText);
+                infoStartY = 660.0f;
+            }
             
             // Credits text
             sf::Text creditsText;
             creditsText.setFont(gameFont);
-            creditsText.setCharacterSize(24);
+            creditsText.setCharacterSize(30);
             creditsText.setFillColor(sf::Color::Cyan);
             creditsText.setString("CREDITS: " + std::to_string(coinReader->getCredits()));
             bounds = creditsText.getLocalBounds();
-            creditsText.setPosition(720 - bounds.width / 2.0f, 610);
+            creditsText.setPosition(720 - bounds.width / 2.0f, infoStartY);
             window.draw(creditsText);
             
             // Helper text
             sf::Text helperText;
             helperText.setFont(gameFont);
-            helperText.setCharacterSize(18);
+            helperText.setCharacterSize(24);
             helperText.setFillColor(sf::Color(200, 200, 200));
             helperText.setString("C = INSERT CREDIT");
             bounds = helperText.getLocalBounds();
-            helperText.setPosition(720 - bounds.width / 2.0f, 650);
+            helperText.setPosition(720 - bounds.width / 2.0f, infoStartY + 42.0f);
             window.draw(helperText);
             
             window.display();
@@ -1439,6 +1491,7 @@ void GameViewPlayer::updateGame(sf::RenderWindow& window) // Draws all elements 
 
     window.draw(nightSky);
     window.draw(fogSky);
+    window.draw(creditCnt);
     window.draw(selectionBox);
     window.draw(scoreCnt);
     window.draw(levelCnt);
@@ -1666,4 +1719,10 @@ void GameViewPlayer::updateLevelCount()
 {
     string cnt = "Sol " + std::to_string(logic -> getLevel()) + "/20";
     levelCnt.setString(cnt);
+}
+
+void GameViewPlayer::updateCreditCount(int credits)
+{
+    string cnt = "Credits " + std::to_string(credits);
+    creditCnt.setString(cnt);
 }

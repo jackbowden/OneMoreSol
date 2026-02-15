@@ -55,7 +55,7 @@ bool GameStateManager::gameViewIsOpen()
     }
     if (currentState == "Play")
     {
-        quit = playView -> gameViewIsOpen(gameWindow);
+        quit = playView -> gameViewIsOpen(gameWindow, coinReader);
         return quit;
     }
 

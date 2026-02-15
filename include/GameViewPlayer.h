@@ -166,6 +166,7 @@ public:
     sf::Text survivorCnt;
     sf::Text scoreCnt;
     sf::Text levelCnt;
+    sf::Text creditCnt;
     sf::Text finalScoreCnt;
     sf::Text majorTomHealth;
     sf::Text pausedMsg;
@@ -188,7 +189,7 @@ public:
     void initializePlayState();
     void cleanUpMenuState();
     bool menuViewIsOpen(sf::RenderWindow& window);
-    bool gameViewIsOpen(sf::RenderWindow& window);
+    bool gameViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader = nullptr);
     bool lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader = nullptr);
     bool winViewIsOpen(sf::RenderWindow& window);
     bool storyViewIsOpen(sf::RenderWindow& window);
@@ -202,6 +203,7 @@ public:
     void updateMajorTomHealth();
     void updateScoreCount();
     void updateLevelCount();
+    void updateCreditCount(int credits);
     void updateLossScreen(sf::RenderWindow &window);
     void selectButton(sf::RenderWindow &window, int y);
     void selectMenuButton(sf::RenderWindow &window, int y);
