@@ -110,7 +110,6 @@ private:
     int koratSurvived = 0;
     int timesDied = 0;
 
-    bool paused = false;
     bool muted = false;
 
 public:
@@ -169,7 +168,6 @@ public:
     sf::Text creditCnt;
     sf::Text finalScoreCnt;
     sf::Text majorTomHealth;
-    sf::Text pausedMsg;
 
     sf::Event Event;
 
