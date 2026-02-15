@@ -21,11 +21,11 @@ int main(int argc, char** argv)
 
     while(!gameOver) // Start game loop
     {
-         //Create menu window for player
+         // Start with Insert Coin screen (arcade mode)
 
         if(!gameStarted || gameRestarted)
         {
-            currentGameWindow -> setState("Start");
+            currentGameWindow -> setState("InsertCoin");
 
             quit = currentGameWindow -> gameViewIsOpen();
 
@@ -47,6 +47,7 @@ int main(int argc, char** argv)
             return 0;
         }
 
+        // Player died - go to loss screen with arcade countdown
         currentGameWindow -> setState("Lost");
 
         gameRestarted = currentGameWindow -> gameViewIsOpen();

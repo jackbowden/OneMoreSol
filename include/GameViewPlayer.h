@@ -12,6 +12,7 @@
 #include "GameLogic.h"
 #include "TextureLoader.h"
 #include "AudioLoader.h"
+#include "CoinReader.h"
 
 using namespace std;
 
@@ -75,6 +76,7 @@ private:
     sf::Text textAdventure;
     sf::Text koratKilledCnt;
     sf::Text finalDeathCnt;
+    sf::Text playButtonText;
 
     float titleX = 130;
     float titleY = 20;
@@ -110,6 +112,7 @@ private:
     int timesDied = 0;
 
     bool paused = false;
+    bool muted = false;
 
 public:
     bool menuExit = false;
@@ -186,11 +189,12 @@ public:
     void cleanUpMenuState();
     bool menuViewIsOpen(sf::RenderWindow& window);
     bool gameViewIsOpen(sf::RenderWindow& window);
-    bool lossViewIsOpen(sf::RenderWindow& window);
+    bool lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader = nullptr);
     bool winViewIsOpen(sf::RenderWindow& window);
     bool storyViewIsOpen(sf::RenderWindow& window);
     bool textAdventureIsOpen(sf::RenderWindow& window);
     void drawAdventure(sf::RenderWindow& window);
+    void drawMenuBackdrop(sf::RenderWindow& window);
     void updateMenu(sf::RenderWindow& window);
     void updateWinScreen(sf::RenderWindow& window);
     void updateGame(sf::RenderWindow& window);
@@ -203,6 +207,7 @@ public:
     void selectMenuButton(sf::RenderWindow &window, int y);
     void selectWinButton(sf::RenderWindow &window, int x);
     void resetGameToMenu(sf::RenderWindow &window);
+    void resetGame();  // Reset game to level 1 for new playthrough
 
 };
 

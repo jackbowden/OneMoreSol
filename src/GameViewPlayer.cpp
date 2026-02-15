@@ -4,6 +4,8 @@
 
 GameViewPlayer::GameViewPlayer() // Player window constructor
 {
+    sf::Listener::setGlobalVolume(100.f);
+
     if(!initialized)
     {
         std::cout << "initializing" << std::endl;
@@ -56,6 +58,20 @@ void GameViewPlayer::initializeMenuState()
     exitBtnRec.setPosition(1440,605);
     exitBtnRec.setSize(sf::Vector2f(444,(117/2)));
     exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
+
+    // Set up the play button text overlay
+    if(!menuFont.loadFromFile("../assets/impact.ttf"))
+    {
+        menuFont.loadFromFile("assets/impact.ttf");
+    }
+    playButtonText.setFont(menuFont);
+    playButtonText.setString("Insert Credit");
+    playButtonText.setCharacterSize(42);
+    playButtonText.setFillColor(sf::Color::Black);
+    playButtonText.setStyle(sf::Text::Bold);
+    sf::FloatRect textBounds = playButtonText.getLocalBounds();
+    playButtonText.setOrigin(textBounds.width / 2.0f, textBounds.height / 2.0f);
+    playButtonText.setPosition(1440 - (1308/2)/2.0f, 400 + (224/2)/2.0f - 8);
 }
 
 /** \brief
@@ -66,7 +82,10 @@ void GameViewPlayer::initializeMenuState()
 void GameViewPlayer::initializePlayState()
 {
     if(!gameFont.loadFromFile("../assets/impact.ttf"))
-        std::cout << "Could not load requested font." << std::endl;
+    {
+        if(!gameFont.loadFromFile("assets/impact.ttf"))
+            std::cout << "Could not load requested font." << std::endl;
+    }
 
     if (!lockIcon.loadFromFile("../assets/lockIcon.png"))
         std::cout << "Failed to Load Lock Icon." << std::endl;
@@ -351,6 +370,7 @@ bool GameViewPlayer::storyViewIsOpen(sf::RenderWindow& window)
 			}
 		}
     }
+    return false;
 }
 
 /** \brief
@@ -366,9 +386,19 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
     window.draw(playBtnRec);
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
+    window.draw(playButtonText);
 
     // display
     window.display();
+}
+
+void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
+{
+    window.draw(menuBackground);
+    window.draw(playBtnRec);
+    window.draw(storyBtnRec);
+    window.draw(exitBtnRec);
+    window.draw(playButtonText);
 }
 
 /** \brief
@@ -874,9 +904,22 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
                         	}
                         }
                     }
+                    if(Event.key.code == sf::Keyboard::M)
+                    {
+                        muted = !muted;
+                        if (muted)
+                        {
+                            sf::Listener::setGlobalVolume(0.f);
+                        }
+                        else
+                        {
+                            sf::Listener::setGlobalVolume(100.f);
+                        }
+                    }
                     if(Event.key.code == sf::Keyboard::K)
                     {
-                        sky.rotate(150);
+                        majorTom -> setHealth(0);
+                        majorTom -> setSurvivors(0);
                     }
 
                     if(Event.key.code == sf::Keyboard::P)
@@ -1022,10 +1065,11 @@ void GameViewPlayer::drawAdventure(sf::RenderWindow& window)
 /** \brief
  *
  * \param window sf::RenderWindow&
+ * \param coinReader CoinReader* (optional) for arcade mode
  * \return bool
  *
  */
-bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
+bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader)
 {
     gameMusic.stop();
     gameMusic.setBuffer(loadedAudio -> soundTrack[23]);
@@ -1034,9 +1078,44 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
     timesDied = timesDied + 1;
 
     bool retry = false;
-    updateLossScreen(window);
+    
+    // Arcade mode: countdown timer
+    sf::Clock countdownClock;
+    const float countdownDuration = 10.0f;
+    bool arcadeMode = (coinReader != nullptr);
+    
+    // Initial draw (only for non-arcade mode)
+    if (!arcadeMode)
+    {
+        updateLossScreen(window);
+    }
+    
     while(window.isOpen() && !retry)
     {
+        // Check for coins in arcade mode
+        if (arcadeMode)
+        {
+            coinReader->checkForCoin();
+            
+            // Check if countdown expired
+            float elapsed = countdownClock.getElapsedTime().asSeconds();
+            if (elapsed >= countdownDuration && coinReader->getCredits() == 0)
+            {
+                // Time's up, no credits - return to attract mode
+                gameMusic.stop();
+                resetGame();
+                return true;  // Exit to insert coin screen
+            }
+            
+            // Check if coin was inserted
+            if (coinReader->getCredits() > 0)
+            {
+                coinReader->useCredit();
+                retry = true;
+                logic -> loseLevel(sky, majorTom);
+                return false;  // Continue playing
+            }
+        }
 
         if (delayClockStarted == false)
         {
@@ -1062,42 +1141,98 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
                     return true;
                 }
 
-                if(Event.key.code == sf::Keyboard::Left || Event.key.code == sf::Keyboard::Right)
+                // Only allow manual selection if not in arcade mode
+                if (!arcadeMode)
                 {
-                    if (selector.y == 1)
+                    if(Event.key.code == sf::Keyboard::Left || Event.key.code == sf::Keyboard::Right)
                     {
-                        selector.y = 0;
-                        selectButton(window, selector.y);
-                    }
-                    else
-                    {
-                        selector.y = 1;
-                        selectButton(window, selector.y);
-                    }
-                }
-
-                if(Event.key.code == sf::Keyboard::Return)
-                {
-                    menuSelection.play();
-                    if(delayClockTime > 1)
-                    {
-                        if (selector.y == 0)
+                        if (selector.y == 1)
                         {
-                            retry = true;
-                            logic -> loseLevel(sky, majorTom);
-                            return false;
+                            selector.y = 0;
+                            selectButton(window, selector.y);
                         }
-                        else if (selector.y == 1)
+                        else
                         {
-                            gameMusic.stop();
-                            majorTom -> setHealth(100);
-                            majorTom -> setSurvivors(20);
-                            sky.rotate(-logic -> getRotation());
-                            return true;
+                            selector.y = 1;
+                            selectButton(window, selector.y);
+                        }
+                    }
+
+                    if(Event.key.code == sf::Keyboard::Return)
+                    {
+                        menuSelection.play();
+                        if(delayClockTime > 1)
+                        {
+                            if (selector.y == 0)
+                            {
+                                retry = true;
+                                logic -> loseLevel(sky, majorTom);
+                                return false;
+                            }
+                            else if (selector.y == 1)
+                            {
+                                gameMusic.stop();
+                                majorTom -> setHealth(100);
+                                majorTom -> setSurvivors(20);
+                                sky.rotate(-logic -> getRotation());
+                                return true;
+                            }
                         }
                     }
                 }
             }
+        }
+        
+        // Redraw screen every frame in arcade mode for smooth countdown
+        if (arcadeMode)
+        {
+            // Clear and draw base loss screen
+            window.clear(sf::Color::Black);
+            window.draw(lossScreen);
+            
+            float elapsed = countdownClock.getElapsedTime().asSeconds();
+            int secondsLeft = static_cast<int>(countdownDuration - elapsed);
+            if (secondsLeft < 0) secondsLeft = 0;
+            
+            // Semi-transparent overlay
+            sf::RectangleShape overlay(sf::Vector2f(600, 200));
+            overlay.setPosition(420, 350);
+            overlay.setFillColor(sf::Color(0, 0, 0, 200));
+            overlay.setOutlineColor(sf::Color(255, 80, 80));
+            overlay.setOutlineThickness(3);
+            window.draw(overlay);
+            
+            // Countdown text
+            sf::Text countdownText;
+            countdownText.setFont(gameFont);
+            countdownText.setCharacterSize(80);
+            countdownText.setFillColor(sf::Color(255, 230, 120));
+            countdownText.setString(std::to_string(secondsLeft));
+            sf::FloatRect bounds = countdownText.getLocalBounds();
+            countdownText.setPosition(720 - bounds.width / 2.0f, 370);
+            window.draw(countdownText);
+            
+            // Credits text
+            sf::Text creditsText;
+            creditsText.setFont(gameFont);
+            creditsText.setCharacterSize(24);
+            creditsText.setFillColor(sf::Color::Cyan);
+            creditsText.setString("CREDITS: " + std::to_string(coinReader->getCredits()));
+            bounds = creditsText.getLocalBounds();
+            creditsText.setPosition(720 - bounds.width / 2.0f, 470);
+            window.draw(creditsText);
+            
+            // Helper text
+            sf::Text helperText;
+            helperText.setFont(gameFont);
+            helperText.setCharacterSize(18);
+            helperText.setFillColor(sf::Color(200, 200, 200));
+            helperText.setString("C = INSERT CREDIT");
+            bounds = helperText.getLocalBounds();
+            helperText.setPosition(720 - bounds.width / 2.0f, 510);
+            window.draw(helperText);
+            
+            window.display();
         }
     }
     return false;
@@ -1208,7 +1343,7 @@ bool GameViewPlayer::winViewIsOpen(sf::RenderWindow& window)
                 }
         }
     }
-
+    return false;
 }
 
 void GameViewPlayer::updateWinScreen(sf::RenderWindow& window)
@@ -1238,9 +1373,39 @@ void GameViewPlayer::updateWinScreen(sf::RenderWindow& window)
 void GameViewPlayer::resetGameToMenu(sf::RenderWindow& window)
 {
     delete logic;
-    GameLogic* logic = new GameLogic();
+    logic = new GameLogic();
     logic -> pauseGame();
     menuViewIsOpen(window);
+}
+
+void GameViewPlayer::resetGame()
+{
+    // Reset game to level 1 (full restart)
+    delete logic;
+    delete majorTom;
+    
+    logic = new GameLogic();
+    majorTom = new MajorTom(loadedTextures);
+    
+    // Reset statistics
+    timesDied = 0;
+    koratKilled = 0;
+    koratSurvived = 0;
+    koratHitCount = 0;
+    bombersExploded = 0;
+    
+    // Reset bullet counters
+    jackalBulletsFired = 0;
+    eliteBulletsFired = 0;
+    bruteBulletsFired = 0;
+    hunterBulletsFired = 0;
+    bikerBulletsFired = 0;
+    tankBossBulletsFired = 0;
+    topBikerBulletsFired = 0;
+    middleBikerBulletsFired = 0;
+    bottomBikerBulletsFired = 0;
+    
+    std::cout << "[GameViewPlayer] Game reset to level 1" << std::endl;
 }
 
 /** \brief
