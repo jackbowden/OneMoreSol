@@ -76,7 +76,6 @@ private:
     sf::Text textAdventure;
     sf::Text koratKilledCnt;
     sf::Text finalDeathCnt;
-    sf::Text playButtonText;
 
     float titleX = 130;
     float titleY = 20;
@@ -115,6 +114,7 @@ private:
     bool muted = false;
 
 public:
+    sf::Text playButtonText;
     bool menuExit = false;
     bool returnToMenu;
     sf::Font gameFont;

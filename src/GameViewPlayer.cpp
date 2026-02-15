@@ -47,7 +47,7 @@ void GameViewPlayer::initializeMenuState()
     playBtnRec.setOrigin((1308/2),0);
     playBtnRec.setPosition(1440,400);
     playBtnRec.setSize(sf::Vector2f((1308/2),(224/2)));
-    playBtnRec.setTexture(&(loadedTextures -> textureArray[6]));
+    // Texture removed - using text only
 
     storyBtnRec.setOrigin((1050/2),0);
     storyBtnRec.setPosition(1440,530);
@@ -67,7 +67,7 @@ void GameViewPlayer::initializeMenuState()
     playButtonText.setFont(menuFont);
     playButtonText.setString("Insert Credit");
     playButtonText.setCharacterSize(42);
-    playButtonText.setFillColor(sf::Color::Black);
+    playButtonText.setFillColor(sf::Color::Cyan);  // Will be blue when selected
     playButtonText.setStyle(sf::Text::Bold);
     sf::FloatRect textBounds = playButtonText.getLocalBounds();
     playButtonText.setOrigin(textBounds.width / 2.0f, textBounds.height / 2.0f);
@@ -383,7 +383,7 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
 {
     window.clear(sf::Color::Black);
     window.draw(menuBackground);
-    window.draw(playBtnRec);
+    // playBtnRec removed - using text only
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
@@ -395,7 +395,7 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
 void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
 {
     window.draw(menuBackground);
-    window.draw(playBtnRec);
+    // playBtnRec removed - using text only
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
@@ -1591,19 +1591,22 @@ void GameViewPlayer::selectMenuButton(sf::RenderWindow& window, int y)
 {
     if(y == 0)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[6]));
+        // Play button selected - make text blue
+        playButtonText.setFillColor(sf::Color::Cyan);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 1)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[5]));
+        // Story button selected
+        playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[8]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 2)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[5]));
+        // Exit button selected
+        playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[10]));
     }

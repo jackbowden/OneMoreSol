@@ -106,10 +106,19 @@ void GameStateManager::checkForCoins()
 
 bool GameStateManager::insertCoinViewIsOpen()
 {
+    // Start menu music
+    playView->gameMusic.stop();
+    playView->gameMusic.setBuffer(playView->loadedAudio->soundTrack[20]);
+    playView->gameMusic.play();
+    playView->gameMusic.setLoop(true);
+
     sf::Event event;
     sf::Clock blinkClock;
     bool blinkOn = true;
     int menuSelection = 0;  // 0 = Play, 1 = Story, 2 = Exit
+
+    // Initialize menu selection to highlight Play button
+    playView->selectMenuButton(gameWindow, menuSelection);
 
     sf::Font overlayFont;
     bool hasFont = overlayFont.loadFromFile("../assets/impact.ttf");
@@ -197,6 +206,19 @@ bool GameStateManager::insertCoinViewIsOpen()
 
         // Check for coins (handles 'C' key press automatically)
         checkForCoins();
+
+        // Update button text based on credits
+        if (hasCredits())
+        {
+            playView->playButtonText.setString("Play (" + std::to_string(getCredits()) + ")");
+        }
+        else
+        {
+            playView->playButtonText.setString("Insert Credit");
+        }
+        sf::FloatRect textBounds = playView->playButtonText.getLocalBounds();
+        playView->playButtonText.setOrigin(textBounds.width / 2.0f, textBounds.height / 2.0f);
+        playView->playButtonText.setPosition(1440 - (1308/2)/2.0f, 400 + (224/2)/2.0f - 8);
 
         if (blinkClock.getElapsedTime().asSeconds() > 0.5f)
         {
