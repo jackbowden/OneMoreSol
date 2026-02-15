@@ -1,6 +1,7 @@
 #include "GameViewPlayer.h"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 GameViewPlayer::GameViewPlayer() // Player window constructor
 {
@@ -1476,70 +1477,43 @@ void GameViewPlayer::updateGame(sf::RenderWindow& window) // Draws all elements 
     if (logic -> getLevel() >= 13)
     	window.draw(weapon7);
 
-    for(int i = 0; i < 7; ++i)
+    float currentReloadSpeed = 0.f;
+    switch(majorTom -> getGun())
     {
+        case 1: currentReloadSpeed = majorTom->pistol->getReloadSpeed(); savedGun = 1; break;
+        case 2: currentReloadSpeed = majorTom->shotgun->getReloadSpeed(); savedGun = 2; break;
+        case 3: currentReloadSpeed = majorTom->rifle->getReloadSpeed(); savedGun = 3; break;
+        case 4: currentReloadSpeed = majorTom->minigun->getReloadSpeed(); savedGun = 4; break;
+        case 5: currentReloadSpeed = majorTom->thrower->getReloadSpeed(); savedGun = 5; break;
+        case 6: currentReloadSpeed = majorTom->sniper->getReloadSpeed(); savedGun = 6; break;
+        case 7: currentReloadSpeed = majorTom->bigFunGun->getReloadSpeed(); savedGun = 7; break;
+    }
 
-        if(logic->reloadStarted == true) // Draw reload symbol <----------
+    if(logic->reloadStarted == true) // Draw reload symbol <----------
+    {
+        if ((majorTom -> getGun() == savedGun) && (currentReloadSpeed > 0.f))
         {
+            float elapsed = logic->reloadClock.getElapsedTime().asSeconds();
+            float progress = std::clamp(elapsed / currentReloadSpeed, 0.f, 1.f);
+            float remainingHeight = 64.f * (1.f - progress);
 
-            if (majorTom -> getGun() == savedGun)
-            {
-                reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,64.f));//reloadRect[majorTom->currentGun - 1].setSize(sf::Vector2f(64.f,(64.f * ((logic->reloadClock.getElapsedTime().asSeconds())-1))*2));
-                reloadRect[majorTom->currentGun-1].setFillColor(sf::Color(255,0,0,125));
-            }
+            reloadRect[majorTom->currentGun-1].setFillColor(sf::Color(255,0,0,125));
+            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,remainingHeight));
 
-            else
+            if(progress >= 1.f)
             {
-                logic-> reloadStarted = false;
+                reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
             }
         }
+        else
+        {
+            logic-> reloadStarted = false;
+        }
+    }
 
-            switch(majorTom -> getGun())
-            {
-                case 1: if((logic -> reloadClock.getElapsedTime().asSeconds() > majorTom->pistol->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 1;
-                        break;
-                case 2: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->shotgun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 2;
-                        break;
-                case 3: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->rifle->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 3;
-                        break;
-                case 4: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->minigun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 4;
-                        break;
-                case 5: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->thrower->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 5;
-                        break;
-                case 6: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->sniper->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 6;
-                        break;
-                case 7: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->bigFunGun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 7;
-                        break;
-            }
-            window.draw(reloadRect[i]);
+    for(int i = 0; i < 7; ++i)
+    {
+        window.draw(reloadRect[i]);
     }
 
     updateSurvivorCount();
