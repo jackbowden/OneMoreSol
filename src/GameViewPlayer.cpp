@@ -3,6 +3,10 @@
 #include <fstream>
 #include <algorithm>
 
+namespace {
+constexpr const char* kGameVersion = "2.0.0";
+}
+
 GameViewPlayer::GameViewPlayer() // Player window constructor
 {
     sf::Listener::setGlobalVolume(100.f);
@@ -76,6 +80,17 @@ void GameViewPlayer::initializeMenuState()
     sf::FloatRect textBounds = playButtonText.getLocalBounds();
     playButtonText.setOrigin(textBounds.width / 2.0f, textBounds.height / 2.0f);
     playButtonText.setPosition(1440 - (1308/2)/2.0f, 400 + (224/2)/2.0f - 8);
+
+    menuVersionText.setFont(menuFont);
+    menuVersionText.setString(std::string("v") + kGameVersion);
+    menuVersionText.setCharacterSize(22);
+    menuVersionText.setFillColor(sf::Color(220, 220, 220, 235));
+    menuVersionText.setOutlineColor(sf::Color(0, 0, 0, 220));
+    menuVersionText.setOutlineThickness(1.5f);
+    sf::FloatRect versionBounds = menuVersionText.getLocalBounds();
+    menuVersionText.setOrigin(versionBounds.left + versionBounds.width,
+                              versionBounds.top + versionBounds.height);
+    menuVersionText.setPosition(1420.f, 880.f);
 }
 
 /** \brief
@@ -393,6 +408,7 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
+    window.draw(menuVersionText);
 
     // display
     window.display();
@@ -405,6 +421,7 @@ void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
+    window.draw(menuVersionText);
 }
 
 /** \brief

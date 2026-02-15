@@ -114,6 +114,7 @@ private:
 
 public:
     sf::Text playButtonText;
+    sf::Text menuVersionText;
     bool menuExit = false;
     bool returnToMenu;
     sf::Font gameFont;
