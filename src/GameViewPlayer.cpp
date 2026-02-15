@@ -1,9 +1,12 @@
 #include "GameViewPlayer.h"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 GameViewPlayer::GameViewPlayer() // Player window constructor
 {
+    sf::Listener::setGlobalVolume(100.f);
+
     if(!initialized)
     {
         std::cout << "initializing" << std::endl;
@@ -45,7 +48,10 @@ void GameViewPlayer::initializeMenuState()
     playBtnRec.setOrigin((1308/2),0);
     playBtnRec.setPosition(1440,400);
     playBtnRec.setSize(sf::Vector2f((1308/2),(224/2)));
-    playBtnRec.setTexture(&(loadedTextures -> textureArray[6]));
+    // Orange background to match other buttons
+    playBtnRec.setFillColor(sf::Color(255, 165, 0));  // Brighter orange (starts selected)
+    playBtnRec.setOutlineColor(sf::Color(200, 100, 0));  // Darker orange outline
+    playBtnRec.setOutlineThickness(2);
 
     storyBtnRec.setOrigin((1050/2),0);
     storyBtnRec.setPosition(1440,530);
@@ -56,6 +62,20 @@ void GameViewPlayer::initializeMenuState()
     exitBtnRec.setPosition(1440,605);
     exitBtnRec.setSize(sf::Vector2f(444,(117/2)));
     exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
+
+    // Set up the play button text overlay
+    if(!menuFont.loadFromFile("../assets/impact.ttf"))
+    {
+        menuFont.loadFromFile("assets/impact.ttf");
+    }
+    playButtonText.setFont(menuFont);
+    playButtonText.setString("Insert Credit");
+    playButtonText.setCharacterSize(42);
+    playButtonText.setFillColor(sf::Color::Cyan);  // Will be blue when selected
+    playButtonText.setStyle(sf::Text::Bold);
+    sf::FloatRect textBounds = playButtonText.getLocalBounds();
+    playButtonText.setOrigin(textBounds.width / 2.0f, textBounds.height / 2.0f);
+    playButtonText.setPosition(1440 - (1308/2)/2.0f, 400 + (224/2)/2.0f - 8);
 }
 
 /** \brief
@@ -66,7 +86,10 @@ void GameViewPlayer::initializeMenuState()
 void GameViewPlayer::initializePlayState()
 {
     if(!gameFont.loadFromFile("../assets/impact.ttf"))
-        std::cout << "Could not load requested font." << std::endl;
+    {
+        if(!gameFont.loadFromFile("assets/impact.ttf"))
+            std::cout << "Could not load requested font." << std::endl;
+    }
 
     if (!lockIcon.loadFromFile("../assets/lockIcon.png"))
         std::cout << "Failed to Load Lock Icon." << std::endl;
@@ -198,19 +221,21 @@ void GameViewPlayer::initializePlayState()
     levelCnt.setFillColor(sf::Color(0,0,0,255));
     levelCnt.setPosition(1215,770);
 
+    //Credit count display (top-left)
+    creditCnt.setFont(gameFont);
+    creditCnt.setCharacterSize(28);
+    creditCnt.setString("Credits 0");
+    creditCnt.setFillColor(sf::Color(255,255,255,255));
+    creditCnt.setOutlineColor(sf::Color(0,0,0,220));
+    creditCnt.setOutlineThickness(2.f);
+    creditCnt.setPosition(20,20);
+
     //Major Tom Health Display
 	majorTomHealth.setFont(gameFont);
 	majorTomHealth.setCharacterSize(22);
 	majorTomHealth.setString("100/100 Health");//might be able to take this out after survivor count is looped in updater
 	majorTomHealth.setFillColor(sf::Color(0,0,0,255));
 	majorTomHealth.setPosition(75,770);
-
-	//Paused message
-    pausedMsg.setFont(gameFont);
-    pausedMsg.setCharacterSize(22);
-    pausedMsg.setString("Game Paused\nPress P to continue.");//might be able to take out due to updater code redundancy
-    pausedMsg.setFillColor(sf::Color(0,0,0,255));
-    pausedMsg.setPosition(680,113);
 
 }
 
@@ -351,6 +376,7 @@ bool GameViewPlayer::storyViewIsOpen(sf::RenderWindow& window)
 			}
 		}
     }
+    return false;
 }
 
 /** \brief
@@ -363,12 +389,22 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
 {
     window.clear(sf::Color::Black);
     window.draw(menuBackground);
-    window.draw(playBtnRec);
+    window.draw(playBtnRec);  // Orange background
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
+    window.draw(playButtonText);
 
     // display
     window.display();
+}
+
+void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
+{
+    window.draw(menuBackground);
+    window.draw(playBtnRec);  // Orange background
+    window.draw(storyBtnRec);
+    window.draw(exitBtnRec);
+    window.draw(playButtonText);
 }
 
 /** \brief
@@ -377,9 +413,14 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
  * \return bool
  *
  */
-bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
+bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader)
 {
     currentLevel = logic -> getLevel() - 1;
+
+    if (coinReader)
+    {
+        updateCreditCount(coinReader->getCredits());
+    }
 
     sf::Clock fireRate1;
     sf::Clock fireRate2;
@@ -396,6 +437,12 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
 
     while(window.isOpen())
     {
+        if (coinReader)
+        {
+            coinReader->checkForCoin();
+            updateCreditCount(coinReader->getCredits());
+        }
+
         if(logic -> isTankBossDead())
         {
             bool exit;
@@ -405,19 +452,6 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
 
         updateGame(window);
         delta = gameClock.getElapsedTime().asSeconds();
-
-        if (!window.hasFocus())
-        {
-        	paused = true;
-        }
-
-        if(paused)
-        {
-        	delta = 0;
-        	gameMusic.pause();
-        	lockOutKeyboard = true;
-        }
-
 
         gameClock.restart();
 
@@ -431,7 +465,6 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
 
         if (logic -> currentLevelEnd())
         {
-            logic -> pauseGame();
             logic -> levelWon = false;
             if(textAdventureIsOpen(window))
                 return true;
@@ -447,35 +480,30 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
 
         currentLevel = logic -> getLevel();
 
-        logic -> pauseGame();
+        logic -> runLevel(sky, majorTom, delta, nightSky, fogSky);
+        logic -> updateKoratOrder();
+        logic -> updateBulletOrder(); //Bullets generation and drawing
+        logic -> updateDyingKorat(majorTom);
+        logic -> moveKorat(delta, majorTom);
+        logic -> queryKoratFiring();
 
-        if (!paused)
+
+        if (logic -> getLevel() == 10)
         {
-			logic -> runLevel(sky, majorTom, delta, nightSky, fogSky);
-			logic -> updateKoratOrder();
-			logic -> updateBulletOrder(); //Bullets generation and drawing
-			logic -> updateDyingKorat(majorTom);
-			logic -> moveKorat(delta, majorTom);
-			logic -> queryKoratFiring();
-
-
-			if (logic -> getLevel() == 10)
-			{
-				logic -> moveBikeBoss(sky, majorTom, delta);
-				logic -> queryBikeFiring();
-				logic -> updateDyingBikeBoss(majorTom);
-			}
-			if (logic -> getLevel() == 20)
-			{
-				logic -> moveTankBoss(sky, majorTom, delta);
-				logic -> queryTankFiring();
-				logic -> updateDyingTankBoss(majorTom);
-			}
-
-			logic -> moveBullet(delta);
-			logic -> moveKoratBullet(delta, majorTom);
+            logic -> moveBikeBoss(sky, majorTom, delta);
+            logic -> queryBikeFiring();
+            logic -> updateDyingBikeBoss(majorTom);
+        }
+        if (logic -> getLevel() == 20)
+        {
+            logic -> moveTankBoss(sky, majorTom, delta);
+            logic -> queryTankFiring();
             logic -> updateDyingTankBoss(majorTom);
         }
+
+        logic -> moveBullet(delta);
+        logic -> moveKoratBullet(delta, majorTom);
+        logic -> updateDyingTankBoss(majorTom);
 
         int logicKilledKorat = logic -> getKilledKorat();
         if (logicKilledKorat > koratKilled)
@@ -643,10 +671,6 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
         {
             keepMovingDown = majorTom->keepMoving(delta, "Down");
             lockOutKeyboard = true;
-        }
-        else if(paused)
-        {
-        	lockOutKeyboard = true;
         }
         else
             lockOutKeyboard = false;
@@ -874,23 +898,28 @@ bool GameViewPlayer::gameViewIsOpen(sf::RenderWindow& window)
                         	}
                         }
                     }
+                    if(Event.key.code == sf::Keyboard::M)
+                    {
+                        muted = !muted;
+                        if (muted)
+                        {
+                            sf::Listener::setGlobalVolume(0.f);
+                        }
+                        else
+                        {
+                            sf::Listener::setGlobalVolume(100.f);
+                        }
+                    }
+                    if(Event.key.code == sf::Keyboard::J)
+                    {
+                        logic -> fastForwardSun(sky, majorTom);
+                    }
                     if(Event.key.code == sf::Keyboard::K)
                     {
-                        sky.rotate(150);
+                        majorTom -> setHealth(0);
+                        majorTom -> setSurvivors(0);
                     }
 
-                    if(Event.key.code == sf::Keyboard::P)
-					{
-                    	paused = !paused;
-                    	if (paused)
-                    	{
-                    		lockOutKeyboard = true;
-                    		gameMusic.pause();
-                    	} else {
-                    		lockOutKeyboard = false;
-                    		gameMusic.play();
-                    	}
-					}
                 }
             }
         }
@@ -1022,10 +1051,11 @@ void GameViewPlayer::drawAdventure(sf::RenderWindow& window)
 /** \brief
  *
  * \param window sf::RenderWindow&
+ * \param coinReader CoinReader* (optional) for arcade mode
  * \return bool
  *
  */
-bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
+bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinReader)
 {
     gameMusic.stop();
     gameMusic.setBuffer(loadedAudio -> soundTrack[23]);
@@ -1034,9 +1064,37 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
     timesDied = timesDied + 1;
 
     bool retry = false;
-    updateLossScreen(window);
+    
+    // Arcade mode: countdown timer
+    sf::Clock countdownClock;
+    const float countdownDuration = 30.0f;
+    bool arcadeMode = (coinReader != nullptr);
+    
+    // Initial draw (only for non-arcade mode)
+    if (!arcadeMode)
+    {
+        updateLossScreen(window);
+    }
+    
     while(window.isOpen() && !retry)
     {
+        // Check for coins in arcade mode
+        if (arcadeMode)
+        {
+            coinReader->checkForCoin();
+
+            bool hasContinueCredit = coinReader->getCredits() > 0;
+            
+            // Check if countdown expired
+            float elapsed = countdownClock.getElapsedTime().asSeconds();
+            if (elapsed >= countdownDuration && !hasContinueCredit)
+            {
+                // Time's up, no credits - return to attract mode
+                gameMusic.stop();
+                resetGame();
+                return true;  // Exit to insert coin screen
+            }
+        }
 
         if (delayClockStarted == false)
         {
@@ -1062,42 +1120,137 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window)
                     return true;
                 }
 
-                if(Event.key.code == sf::Keyboard::Left || Event.key.code == sf::Keyboard::Right)
+                // Only allow manual selection if not in arcade mode
+                if (!arcadeMode)
                 {
-                    if (selector.y == 1)
+                    if(Event.key.code == sf::Keyboard::Left || Event.key.code == sf::Keyboard::Right)
                     {
-                        selector.y = 0;
-                        selectButton(window, selector.y);
+                        if (selector.y == 1)
+                        {
+                            selector.y = 0;
+                            selectButton(window, selector.y);
+                        }
+                        else
+                        {
+                            selector.y = 1;
+                            selectButton(window, selector.y);
+                        }
                     }
-                    else
+
+                    if(Event.key.code == sf::Keyboard::Return)
                     {
-                        selector.y = 1;
-                        selectButton(window, selector.y);
+                        menuSelection.play();
+                        if(delayClockTime > 1)
+                        {
+                            if (selector.y == 0)
+                            {
+                                retry = true;
+                                logic -> loseLevel(sky, majorTom);
+                                return false;
+                            }
+                            else if (selector.y == 1)
+                            {
+                                gameMusic.stop();
+                                majorTom -> setHealth(100);
+                                majorTom -> setSurvivors(20);
+                                sky.rotate(-logic -> getRotation());
+                                return true;
+                            }
+                        }
                     }
                 }
-
-                if(Event.key.code == sf::Keyboard::Return)
+                else if (Event.key.code == sf::Keyboard::Return)
                 {
-                    menuSelection.play();
-                    if(delayClockTime > 1)
+                    if (coinReader->getCredits() > 0)
                     {
-                        if (selector.y == 0)
-                        {
-                            retry = true;
-                            logic -> loseLevel(sky, majorTom);
-                            return false;
-                        }
-                        else if (selector.y == 1)
-                        {
-                            gameMusic.stop();
-                            majorTom -> setHealth(100);
-                            majorTom -> setSurvivors(20);
-                            sky.rotate(-logic -> getRotation());
-                            return true;
-                        }
+                        menuSelection.play();
+                        coinReader->useCredit();
+                        retry = true;
+                        logic -> loseLevel(sky, majorTom);
+                        return false;  // Continue playing
                     }
                 }
             }
+        }
+        
+        // Redraw screen every frame in arcade mode for smooth countdown
+        if (arcadeMode)
+        {
+            // Clear and draw base loss screen
+            window.clear(sf::Color::Black);
+            window.draw(lossScreen);
+
+            bool hasContinueCredit = coinReader->getCredits() > 0;
+            
+            float elapsed = countdownClock.getElapsedTime().asSeconds();
+            int secondsLeft = static_cast<int>(countdownDuration - elapsed + 0.999f);
+            if (secondsLeft < 0) secondsLeft = 0;
+            
+            // Semi-transparent overlay
+            sf::RectangleShape overlay(sf::Vector2f(640, 300));
+            overlay.setPosition(400, 450);
+            overlay.setFillColor(sf::Color(0, 0, 0, 200));
+            overlay.setOutlineColor(sf::Color(255, 80, 80));
+            overlay.setOutlineThickness(3);
+            window.draw(overlay);
+
+            sf::FloatRect bounds;
+
+            sf::Text titleText;
+            titleText.setFont(gameFont);
+            titleText.setCharacterSize(52);
+            titleText.setFillColor(sf::Color(255, 120, 120));
+            titleText.setString("YOU DIED");
+            bounds = titleText.getLocalBounds();
+            titleText.setPosition(720 - bounds.width / 2.0f, 476);
+            window.draw(titleText);
+
+            sf::Text statusText;
+            statusText.setFont(gameFont);
+            statusText.setCharacterSize(34);
+            statusText.setFillColor(sf::Color::White);
+            statusText.setString(hasContinueCredit ? "CONTINUE AVAILABLE" : "INSERT CREDIT TO CONTINUE");
+            bounds = statusText.getLocalBounds();
+            statusText.setPosition(720 - bounds.width / 2.0f, 540);
+            window.draw(statusText);
+
+            float infoStartY = 640.0f;
+
+            if (!hasContinueCredit)
+            {
+                // Countdown text only when no credits are available
+                sf::Text countdownText;
+                countdownText.setFont(gameFont);
+                countdownText.setCharacterSize(56);
+                countdownText.setFillColor(sf::Color(255, 230, 120));
+                countdownText.setString(std::to_string(secondsLeft));
+                bounds = countdownText.getLocalBounds();
+                countdownText.setPosition(720 - bounds.width / 2.0f, 590);
+                window.draw(countdownText);
+                infoStartY = 660.0f;
+            }
+            
+            // Credits text
+            sf::Text creditsText;
+            creditsText.setFont(gameFont);
+            creditsText.setCharacterSize(30);
+            creditsText.setFillColor(sf::Color::Cyan);
+            creditsText.setString("CREDITS: " + std::to_string(coinReader->getCredits()));
+            bounds = creditsText.getLocalBounds();
+            creditsText.setPosition(720 - bounds.width / 2.0f, infoStartY);
+            window.draw(creditsText);
+            
+            // Helper text
+            sf::Text helperText;
+            helperText.setFont(gameFont);
+            helperText.setCharacterSize(24);
+            helperText.setFillColor(sf::Color(200, 200, 200));
+            helperText.setString("C = INSERT CREDIT");
+            bounds = helperText.getLocalBounds();
+            helperText.setPosition(720 - bounds.width / 2.0f, infoStartY + 42.0f);
+            window.draw(helperText);
+            
+            window.display();
         }
     }
     return false;
@@ -1208,7 +1361,7 @@ bool GameViewPlayer::winViewIsOpen(sf::RenderWindow& window)
                 }
         }
     }
-
+    return false;
 }
 
 void GameViewPlayer::updateWinScreen(sf::RenderWindow& window)
@@ -1238,9 +1391,38 @@ void GameViewPlayer::updateWinScreen(sf::RenderWindow& window)
 void GameViewPlayer::resetGameToMenu(sf::RenderWindow& window)
 {
     delete logic;
-    GameLogic* logic = new GameLogic();
-    logic -> pauseGame();
+    logic = new GameLogic();
     menuViewIsOpen(window);
+}
+
+void GameViewPlayer::resetGame()
+{
+    // Reset game to level 1 (full restart)
+    delete logic;
+    delete majorTom;
+    
+    logic = new GameLogic();
+    majorTom = new MajorTom(loadedTextures);
+    
+    // Reset statistics
+    timesDied = 0;
+    koratKilled = 0;
+    koratSurvived = 0;
+    koratHitCount = 0;
+    bombersExploded = 0;
+    
+    // Reset bullet counters
+    jackalBulletsFired = 0;
+    eliteBulletsFired = 0;
+    bruteBulletsFired = 0;
+    hunterBulletsFired = 0;
+    bikerBulletsFired = 0;
+    tankBossBulletsFired = 0;
+    topBikerBulletsFired = 0;
+    middleBikerBulletsFired = 0;
+    bottomBikerBulletsFired = 0;
+    
+    std::cout << "[GameViewPlayer] Game reset to level 1" << std::endl;
 }
 
 /** \brief
@@ -1271,11 +1453,10 @@ void GameViewPlayer::updateGame(sf::RenderWindow& window) // Draws all elements 
 
     window.draw(nightSky);
     window.draw(fogSky);
+    window.draw(creditCnt);
     window.draw(selectionBox);
     window.draw(scoreCnt);
     window.draw(levelCnt);
-    if(paused)
-    	window.draw(pausedMsg);
 
     logic -> drawBullet(window);
 
@@ -1296,70 +1477,43 @@ void GameViewPlayer::updateGame(sf::RenderWindow& window) // Draws all elements 
     if (logic -> getLevel() >= 13)
     	window.draw(weapon7);
 
-    for(int i = 0; i < 7; ++i)
+    float currentReloadSpeed = 0.f;
+    switch(majorTom -> getGun())
     {
+        case 1: currentReloadSpeed = majorTom->pistol->getReloadSpeed(); savedGun = 1; break;
+        case 2: currentReloadSpeed = majorTom->shotgun->getReloadSpeed(); savedGun = 2; break;
+        case 3: currentReloadSpeed = majorTom->rifle->getReloadSpeed(); savedGun = 3; break;
+        case 4: currentReloadSpeed = majorTom->minigun->getReloadSpeed(); savedGun = 4; break;
+        case 5: currentReloadSpeed = majorTom->thrower->getReloadSpeed(); savedGun = 5; break;
+        case 6: currentReloadSpeed = majorTom->sniper->getReloadSpeed(); savedGun = 6; break;
+        case 7: currentReloadSpeed = majorTom->bigFunGun->getReloadSpeed(); savedGun = 7; break;
+    }
 
-        if(logic->reloadStarted == true) // Draw reload symbol <----------
+    if(logic->reloadStarted == true) // Draw reload symbol <----------
+    {
+        if ((majorTom -> getGun() == savedGun) && (currentReloadSpeed > 0.f))
         {
+            float elapsed = logic->reloadClock.getElapsedTime().asSeconds();
+            float progress = std::clamp(elapsed / currentReloadSpeed, 0.f, 1.f);
+            float remainingHeight = 64.f * (1.f - progress);
 
-            if (majorTom -> getGun() == savedGun)
-            {
-                reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,64.f));//reloadRect[majorTom->currentGun - 1].setSize(sf::Vector2f(64.f,(64.f * ((logic->reloadClock.getElapsedTime().asSeconds())-1))*2));
-                reloadRect[majorTom->currentGun-1].setFillColor(sf::Color(255,0,0,125));
-            }
+            reloadRect[majorTom->currentGun-1].setFillColor(sf::Color(255,0,0,125));
+            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,remainingHeight));
 
-            else
+            if(progress >= 1.f)
             {
-                logic-> reloadStarted = false;
+                reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
             }
         }
+        else
+        {
+            logic-> reloadStarted = false;
+        }
+    }
 
-            switch(majorTom -> getGun())
-            {
-                case 1: if((logic -> reloadClock.getElapsedTime().asSeconds() > majorTom->pistol->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 1;
-                        break;
-                case 2: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->shotgun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 2;
-                        break;
-                case 3: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->rifle->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 3;
-                        break;
-                case 4: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->minigun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 4;
-                        break;
-                case 5: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->thrower->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 5;
-                        break;
-                case 6: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->sniper->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 6;
-                        break;
-                case 7: if(logic -> reloadClock.getElapsedTime().asSeconds() > (majorTom->bigFunGun->getReloadSpeed()))
-                        {
-                            reloadRect[majorTom->currentGun-1].setSize(sf::Vector2f(64.f,0.f));
-                        }
-                        savedGun = 7;
-                        break;
-            }
-            window.draw(reloadRect[i]);
+    for(int i = 0; i < 7; ++i)
+    {
+        window.draw(reloadRect[i]);
     }
 
     updateSurvivorCount();
@@ -1426,19 +1580,25 @@ void GameViewPlayer::selectMenuButton(sf::RenderWindow& window, int y)
 {
     if(y == 0)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[6]));
+        // Play button selected - make text blue and brighten background
+        playBtnRec.setFillColor(sf::Color(255, 165, 0));  // Brighter orange
+        playButtonText.setFillColor(sf::Color::Cyan);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 1)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[5]));
+        // Story button selected - dim play button
+        playBtnRec.setFillColor(sf::Color(255, 140, 0));  // Normal orange
+        playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[8]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 2)
     {
-        playBtnRec.setTexture(&(loadedTextures -> textureArray[5]));
+        // Exit button selected - dim play button
+        playBtnRec.setFillColor(sf::Color(255, 140, 0));  // Normal orange
+        playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[10]));
     }
@@ -1492,4 +1652,10 @@ void GameViewPlayer::updateLevelCount()
 {
     string cnt = "Sol " + std::to_string(logic -> getLevel()) + "/20";
     levelCnt.setString(cnt);
+}
+
+void GameViewPlayer::updateCreditCount(int credits)
+{
+    string cnt = "Credits " + std::to_string(credits);
+    creditCnt.setString(cnt);
 }

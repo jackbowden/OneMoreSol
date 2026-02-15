@@ -2,6 +2,7 @@
 
 #include "MajorTom.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -19,6 +20,17 @@ MajorTom::MajorTom(TextureLoader* loadedTextures)
     majorTom.setOrigin(sf::Vector2f(32.f, 32.f));
     majorTom.setPosition(156,508);
     majorTom.setScale(sf::Vector2f(1.2f,1.2f));
+
+    healthBarBackground.setSize(sf::Vector2f(66.f, 8.f));
+    healthBarBackground.setFillColor(sf::Color(30, 30, 30, 220));
+    healthBarBackground.setOutlineColor(sf::Color::Black);
+    healthBarBackground.setOutlineThickness(1.f);
+    healthBarBackground.setOrigin(sf::Vector2f(33.f, 4.f));
+
+    healthBarFill.setSize(sf::Vector2f(64.f, 6.f));
+    healthBarFill.setFillColor(sf::Color(0, 220, 0));
+    healthBarFill.setOrigin(sf::Vector2f(0.f, 3.f));
+
     setHealth(100);
     setSurvivors(20);
     setScore(0);
@@ -27,6 +39,27 @@ MajorTom::MajorTom(TextureLoader* loadedTextures)
 void MajorTom::drawTom (sf::RenderWindow& window)
 {
     window.draw(majorTom);
+
+    float clampedHealth = static_cast<float>(std::clamp(currentHealth, 0, maxHealth));
+    float healthRatio = clampedHealth / static_cast<float>(maxHealth);
+    float fillWidth = 64.f * healthRatio;
+
+    sf::Vector2f tomPosition = majorTom.getPosition();
+    sf::Vector2f barPosition(tomPosition.x, tomPosition.y - 52.f);
+
+    healthBarBackground.setPosition(barPosition);
+    healthBarFill.setPosition(sf::Vector2f(barPosition.x - 32.f, barPosition.y));
+    healthBarFill.setSize(sf::Vector2f(fillWidth, 6.f));
+
+    if (healthRatio > 0.6f)
+        healthBarFill.setFillColor(sf::Color(0, 220, 0));
+    else if (healthRatio > 0.3f)
+        healthBarFill.setFillColor(sf::Color(240, 200, 0));
+    else
+        healthBarFill.setFillColor(sf::Color(220, 40, 40));
+
+    window.draw(healthBarBackground);
+    window.draw(healthBarFill);
 }
 
 float MajorTom::getTomPosition()
@@ -325,7 +358,7 @@ sf::Sprite MajorTom::getTom()
 
 void MajorTom::wasShot(int damage)
 {
-    currentHealth = currentHealth - damage;
+    currentHealth = std::max(0, currentHealth - damage);
 
 }
 
@@ -336,7 +369,7 @@ int MajorTom::getHealth()
 
 void MajorTom::setHealth(int newHealth)
 {
-    currentHealth = newHealth;
+    currentHealth = std::clamp(newHealth, 0, maxHealth);
 }
 
 int MajorTom::getScore()

@@ -118,8 +118,6 @@ class GameLogic{
         bool movingUp = false;
         bool movingDown = false;
 
-        bool isPaused = false;
-
         double directMove = 1;
 
         int topBikerBulletsFired = 0;
@@ -183,6 +181,7 @@ class GameLogic{
 
         //changes survivor count
         void runLevel(sf::CircleShape&, MajorTom*, float, sf::RectangleShape&, sf::RectangleShape&);
+        void fastForwardSun(sf::CircleShape&, MajorTom*);
 
         void loseLevel(sf::CircleShape&, MajorTom*);
 
@@ -204,7 +203,6 @@ class GameLogic{
         void queryBikeFiring();
         void queryTankFiring();
 
-        void pauseGame();
         void explode(KoratEmpire &bomber, MajorTom* majorTom);
         void clearAssets();
         bool currentLevelEnd();
@@ -225,8 +223,6 @@ class GameLogic{
         int getKoratSurvived();
         int getBombersExploded();
         int getTankBossBulletsFired();
-
-        bool getIsPaused();
 
         float getRotation();
         void setTankBossBool(bool b);
