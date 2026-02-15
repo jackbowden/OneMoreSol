@@ -47,7 +47,10 @@ void GameViewPlayer::initializeMenuState()
     playBtnRec.setOrigin((1308/2),0);
     playBtnRec.setPosition(1440,400);
     playBtnRec.setSize(sf::Vector2f((1308/2),(224/2)));
-    // Texture removed - using text only
+    // Orange background to match other buttons
+    playBtnRec.setFillColor(sf::Color(255, 165, 0));  // Brighter orange (starts selected)
+    playBtnRec.setOutlineColor(sf::Color(200, 100, 0));  // Darker orange outline
+    playBtnRec.setOutlineThickness(2);
 
     storyBtnRec.setOrigin((1050/2),0);
     storyBtnRec.setPosition(1440,530);
@@ -383,7 +386,7 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
 {
     window.clear(sf::Color::Black);
     window.draw(menuBackground);
-    // playBtnRec removed - using text only
+    window.draw(playBtnRec);  // Orange background
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
@@ -395,7 +398,7 @@ void GameViewPlayer::updateMenu(sf::RenderWindow& window) // Updates screen
 void GameViewPlayer::drawMenuBackdrop(sf::RenderWindow& window)
 {
     window.draw(menuBackground);
-    // playBtnRec removed - using text only
+    window.draw(playBtnRec);  // Orange background
     window.draw(storyBtnRec);
     window.draw(exitBtnRec);
     window.draw(playButtonText);
@@ -1196,7 +1199,7 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
             
             // Semi-transparent overlay
             sf::RectangleShape overlay(sf::Vector2f(600, 200));
-            overlay.setPosition(420, 350);
+            overlay.setPosition(420, 490);
             overlay.setFillColor(sf::Color(0, 0, 0, 200));
             overlay.setOutlineColor(sf::Color(255, 80, 80));
             overlay.setOutlineThickness(3);
@@ -1209,7 +1212,7 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
             countdownText.setFillColor(sf::Color(255, 230, 120));
             countdownText.setString(std::to_string(secondsLeft));
             sf::FloatRect bounds = countdownText.getLocalBounds();
-            countdownText.setPosition(720 - bounds.width / 2.0f, 370);
+            countdownText.setPosition(720 - bounds.width / 2.0f, 510);
             window.draw(countdownText);
             
             // Credits text
@@ -1219,7 +1222,7 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
             creditsText.setFillColor(sf::Color::Cyan);
             creditsText.setString("CREDITS: " + std::to_string(coinReader->getCredits()));
             bounds = creditsText.getLocalBounds();
-            creditsText.setPosition(720 - bounds.width / 2.0f, 470);
+            creditsText.setPosition(720 - bounds.width / 2.0f, 610);
             window.draw(creditsText);
             
             // Helper text
@@ -1229,7 +1232,7 @@ bool GameViewPlayer::lossViewIsOpen(sf::RenderWindow& window, CoinReader* coinRe
             helperText.setFillColor(sf::Color(200, 200, 200));
             helperText.setString("C = INSERT CREDIT");
             bounds = helperText.getLocalBounds();
-            helperText.setPosition(720 - bounds.width / 2.0f, 510);
+            helperText.setPosition(720 - bounds.width / 2.0f, 650);
             window.draw(helperText);
             
             window.display();
@@ -1591,21 +1594,24 @@ void GameViewPlayer::selectMenuButton(sf::RenderWindow& window, int y)
 {
     if(y == 0)
     {
-        // Play button selected - make text blue
+        // Play button selected - make text blue and brighten background
+        playBtnRec.setFillColor(sf::Color(255, 165, 0));  // Brighter orange
         playButtonText.setFillColor(sf::Color::Cyan);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 1)
     {
-        // Story button selected
+        // Story button selected - dim play button
+        playBtnRec.setFillColor(sf::Color(255, 140, 0));  // Normal orange
         playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[8]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[9]));
     }
     else if(y == 2)
     {
-        // Exit button selected
+        // Exit button selected - dim play button
+        playBtnRec.setFillColor(sf::Color(255, 140, 0));  // Normal orange
         playButtonText.setFillColor(sf::Color::Black);
         storyBtnRec.setTexture(&(loadedTextures -> textureArray[7]));
         exitBtnRec.setTexture(&(loadedTextures -> textureArray[10]));

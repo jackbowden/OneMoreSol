@@ -263,8 +263,8 @@ bool GameStateManager::continueViewIsOpen()
     dimmer.setPosition(0, 0);
     dimmer.setFillColor(sf::Color(0, 0, 0, 170));
 
-    sf::RectangleShape panel(sf::Vector2f(900, 430));
-    panel.setPosition(270, 220);
+    sf::RectangleShape panel(sf::Vector2f(900, 300));
+    panel.setPosition(270, 580);
     panel.setFillColor(sf::Color(20, 20, 20, 240));
     panel.setOutlineColor(sf::Color(255, 80, 80));
     panel.setOutlineThickness(4);
@@ -295,9 +295,9 @@ bool GameStateManager::continueViewIsOpen()
         helperText.setFillColor(sf::Color(200, 200, 200));
     }
     
-    // Start 10 second countdown
+    // Start 30 second countdown
     continueTimer.restart();
-    const float countdownDuration = 10.0f;
+    const float countdownDuration = 30.0f;
     
     while (gameWindow.isOpen())
     {
@@ -350,23 +350,23 @@ bool GameStateManager::continueViewIsOpen()
         {
             gameOverText.setString("GAME OVER");
             sf::FloatRect gameOverBounds = gameOverText.getLocalBounds();
-            gameOverText.setPosition(720 - gameOverBounds.width / 2.0f, 255);
+            gameOverText.setPosition(720 - gameOverBounds.width / 2.0f, 600);
 
             continueText.setString("INSERT CREDIT TO CONTINUE");
             sf::FloatRect continueBounds = continueText.getLocalBounds();
-            continueText.setPosition(720 - continueBounds.width / 2.0f, 340);
+            continueText.setPosition(720 - continueBounds.width / 2.0f, 675);
 
             timerText.setString(std::to_string(secondsLeft));
             sf::FloatRect timerBounds = timerText.getLocalBounds();
-            timerText.setPosition(720 - timerBounds.width / 2.0f, 410);
+            timerText.setPosition(720 - timerBounds.width / 2.0f, 735);
 
             creditsText.setString("CREDITS: " + std::to_string(getCredits()));
             sf::FloatRect creditsBounds = creditsText.getLocalBounds();
-            creditsText.setPosition(720 - creditsBounds.width / 2.0f, 535);
+            creditsText.setPosition(720 - creditsBounds.width / 2.0f, 835);
 
             helperText.setString("C = INSERT CREDIT");
             sf::FloatRect helperBounds = helperText.getLocalBounds();
-            helperText.setPosition(720 - helperBounds.width / 2.0f, 595);
+            helperText.setPosition(720 - helperBounds.width / 2.0f, 870);
 
             gameWindow.draw(gameOverText);
             gameWindow.draw(continueText);
@@ -377,19 +377,19 @@ bool GameStateManager::continueViewIsOpen()
         else
         {
             sf::RectangleShape fallbackHeadline(sf::Vector2f(680, 90));
-            fallbackHeadline.setPosition(380, 270);
+            fallbackHeadline.setPosition(380, 615);
             fallbackHeadline.setFillColor(sf::Color(160, 40, 40));
             gameWindow.draw(fallbackHeadline);
 
             sf::RectangleShape fallbackTimerBox(sf::Vector2f(220, 140));
-            fallbackTimerBox.setPosition(610, 410);
+            fallbackTimerBox.setPosition(610, 725);
             fallbackTimerBox.setFillColor(sf::Color(40, 40, 40));
             fallbackTimerBox.setOutlineColor(sf::Color(255, 230, 120));
             fallbackTimerBox.setOutlineThickness(3);
             gameWindow.draw(fallbackTimerBox);
 
             sf::RectangleShape fallbackProgressBg(sf::Vector2f(520, 30));
-            fallbackProgressBg.setPosition(460, 575);
+            fallbackProgressBg.setPosition(460, 870);
             fallbackProgressBg.setFillColor(sf::Color(45, 45, 45));
             fallbackProgressBg.setOutlineColor(sf::Color::White);
             fallbackProgressBg.setOutlineThickness(2);
@@ -401,38 +401,12 @@ bool GameStateManager::continueViewIsOpen()
                 remainingPercent = 0.f;
             }
             sf::RectangleShape fallbackProgress(sf::Vector2f(516.f * remainingPercent, 26));
-            fallbackProgress.setPosition(462, 577);
+            fallbackProgress.setPosition(462, 872);
             fallbackProgress.setFillColor(sf::Color::Yellow);
             gameWindow.draw(fallbackProgress);
         }
 
-        sf::RectangleShape progressBg(sf::Vector2f(520, 26));
-        progressBg.setPosition(460, 640);
-        progressBg.setFillColor(sf::Color(45, 45, 45));
-        progressBg.setOutlineColor(sf::Color::White);
-        progressBg.setOutlineThickness(2);
-        gameWindow.draw(progressBg);
-
-        float remainingPercent = (countdownDuration - elapsed) / countdownDuration;
-        if (remainingPercent < 0.f)
-        {
-            remainingPercent = 0.f;
-        }
-        sf::RectangleShape progress(sf::Vector2f(516.f * remainingPercent, 22));
-        progress.setPosition(462, 642);
-        if (secondsLeft > 6)
-        {
-            progress.setFillColor(sf::Color::Green);
-        }
-        else if (secondsLeft > 3)
-        {
-            progress.setFillColor(sf::Color::Yellow);
-        }
-        else
-        {
-            progress.setFillColor(sf::Color(255, 80, 80));
-        }
-        gameWindow.draw(progress);
+        // Progress bar removed to save space
 
         gameWindow.display();
     }
