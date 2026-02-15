@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake Configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        ".."
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/build"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build (make)",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "-j4"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/build"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Configure + Build",
+      "dependsOn": [
+        "CMake Configure",
+        "Build (make)"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Run game",
+      "type": "shell",
+      "command": "./main",
+      "options": {
+        "cwd": "${workspaceFolder}/build"
+      },
+      "dependsOn": [
+        "Build (make)"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -23,9 +23,13 @@ class MajorTom {
         float newPosition;
         float timePassed;
         int currentHealth;
+        const int maxHealth = 100;
         int newHealth;
         int survivorCnt;
         int score;
+
+        sf::RectangleShape healthBarBackground;
+        sf::RectangleShape healthBarFill;
 
     public:
         sf::Sprite majorTom;

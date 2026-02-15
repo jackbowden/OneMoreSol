@@ -45,8 +45,12 @@ class TankBoss {
 
     private:
         int speed = 30;
+        const int maxHealth = 8000;
         int health = 8000;
         bool survive = false;
+
+        sf::RectangleShape healthBarBackground;
+        sf::RectangleShape healthBarFill;
 
         int lane1 = 335;
         int lane2 = 422;

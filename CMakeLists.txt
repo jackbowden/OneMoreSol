@@ -65,6 +65,24 @@ file(GLOB EXECLIST src/main.cpp)
 #  link_libraries(${Boost_LIBRARIES})           #
 #################################################
 
+# Find libserialport for arcade coin acceptor (Linux/production builds only)
+if(NOT APPLE)
+    find_package(PkgConfig)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(SERIALPORT libserialport)
+        if(SERIALPORT_FOUND)
+            include_directories(${SERIALPORT_INCLUDE_DIRS})
+            link_directories(${SERIALPORT_LIBRARY_DIRS})
+            message("-- Found libserialport for coin acceptor support")
+        else()
+            message(WARNING "libserialport not found. Coin acceptor will not function on production hardware.")
+            message(WARNING "Install with: sudo apt-get install libserialport-dev (Debian/Ubuntu)")
+        endif()
+    endif()
+else()
+    message("-- macOS detected: Using keyboard coin reader for development")
+endif()
+
 
 #find_package(Guns REQUIRED)                 
 #include_directories(${Guns_INCLUDE_DIRS})   
@@ -84,6 +102,8 @@ file(GLOB EXECLIST src/main.cpp)
 #############
 # Find SFML #
 #############
+# NOTE: This project requires SFML 2.x
+# If you have SFML 3.x installed, downgrade: brew install sfml@2
 find_package(SFML 2 COMPONENTS graphics window system audio network CONFIG QUIET)
 
 if(NOT SFML_FOUND)
@@ -108,8 +128,8 @@ endif()
 ###############
 # C++ Options #
 ###############
-# Enable C++11
-set(CMAKE_CXX_STANDARD 11)
+# Enable C++17 (required for SFML 3.x)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -154,6 +174,11 @@ if(NOT SRC STREQUAL "")
   set(LIBNAME "${LIBNAME}_core")
   add_library(${LIBNAME} ${SRC})
   target_link_libraries(${LIBNAME} PUBLIC ${ONEMORESOL_SFML_LIBS})
+  
+  # Link libserialport on non-Apple platforms if available
+  if(NOT APPLE AND SERIALPORT_FOUND)
+    target_link_libraries(${LIBNAME} PUBLIC ${SERIALPORT_LIBRARIES})
+  endif()
 endif()
 
 # executables (any CPP file in 'bin' dir)

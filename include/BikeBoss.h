@@ -52,8 +52,12 @@ class BikeBoss {
 
     private:
         int speed = 40;
+        const int maxHealth = 4000;
         int health = 4000;
         bool survive = false;
+
+        sf::RectangleShape healthBarBackground;
+        sf::RectangleShape healthBarFill;
 
         float lastBulletFired;
         sf::Clock fireBulletClock;
